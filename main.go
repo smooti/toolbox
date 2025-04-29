@@ -8,6 +8,7 @@ import (
 )
 
 func main() {
+	// Return error if unable to get host information
 	osDetails, err := GetOSInfo()
 	if err != nil {
 		log.Fatal(err)
@@ -38,6 +39,7 @@ type OSInfo struct {
 	Architecture string
 }
 
+// Return an object containing the current systems OS information
 func GetOSInfo() (OSInfo, error) {
 	// Return error if unable to get host information
 	host, err := sysinfo.Host()
