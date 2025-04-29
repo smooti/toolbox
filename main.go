@@ -3,44 +3,20 @@ package main
 import (
 	"fmt"
 	"log"
+	"runtime"
 
 	"github.com/elastic/go-sysinfo"
+	"github.com/shirou/gopsutil/disk"
 )
 
 func main() {
-	// Return error if unable to get host information
-	osDetails, err := GetOSInfo()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	hostname := osDetails.Hostname
-	osName := osDetails.Name
-	osFamily := osDetails.Family
-	osVersion := osDetails.Version
-	osBuild := osDetails.Build
-	architecture := osDetails.Architecture
-
-	fmt.Printf("Hostname: %s\n", hostname)
-	fmt.Printf("OS Family: %s\n", osFamily)
-	fmt.Printf("OS Name: %s\n", osName)
-	fmt.Printf("OS Version: %s\n", osVersion)
-	fmt.Printf("OS Build: %s\n", osBuild)
-	fmt.Printf("Architecture: %s\n", architecture)
+	GetOSInfo()
+	GetDiskInfo()
 
 }
 
-type OSInfo struct {
-	Hostname     string
-	Name         string
-	Family       string
-	Version      string
-	Build        string
-	Architecture string
-}
-
-// Return an object containing the current systems OS information
-func GetOSInfo() (OSInfo, error) {
+// Retrieves operating system information.
+func GetOSInfo() error {
 	// Return error if unable to get host information
 	host, err := sysinfo.Host()
 	if err != nil {
@@ -48,14 +24,47 @@ func GetOSInfo() (OSInfo, error) {
 	}
 
 	info := host.Info()
-	osInfo := OSInfo{
-		Hostname:     info.Hostname,
-		Name:         info.OS.Name,
-		Family:       info.OS.Family,
-		Version:      info.OS.Version,
-		Build:        info.OS.Build,
-		Architecture: info.Architecture,
-	}
-	return osInfo, nil
+	hostname := info.Hostname
+	osName := info.OS.Name
+	osFamily := info.OS.Family
+	osVersion := info.OS.Version
+	osBuild := info.OS.Build
+	architecture := info.Architecture
 
+	fmt.Println("OS Information:")
+	fmt.Printf("  Hostname: %s\n", hostname)
+	fmt.Printf("  OS Family: %s\n", osFamily)
+	fmt.Printf("  OS Name: %s\n", osName)
+	fmt.Printf("  OS Version: %s\n", osVersion)
+	fmt.Printf("  OS Build: %s\n", osBuild)
+	fmt.Printf("  Architecture: %s\n", architecture)
+	return nil
+
+}
+
+// Retrieves hard disk information
+func GetDiskInfo(drive ...string) error {
+
+	targetDrive := "C:" // Default for windows
+	if runtime.GOOS != "windows" {
+		targetDrive = "/" // Default for other systems (Linux, macOS, etc.)
+	}
+
+	usage, err := disk.Usage(targetDrive)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	totalDiskUsage := usage.Total / 1024 / 1024 / 1024
+	freeDiskSpace := usage.Free / 1024 / 1024 / 1024
+	usedDiskSpace := usage.Used / 1024 / 1024 / 1024
+	usedDiskSpacePercentage := usage.UsedPercent
+
+	fmt.Println("Disk Information:")
+	fmt.Printf("  Total: %v GB\n", totalDiskUsage)
+	fmt.Printf("  Free: %v GB\n", freeDiskSpace)
+	fmt.Printf("  Used: %v GB (%.2f%%)\n", usedDiskSpace, usedDiskSpacePercentage)
+	fmt.Printf("  Filesystem: %s\n", usage.Fstype)
+	fmt.Printf("  Mount Point: %s\n", usage.Path)
+	return nil
 }
